@@ -1,4 +1,7 @@
 yfinance
 scikit-learn
+pandas
 numpy
 streamlit
+requests
+textblob
