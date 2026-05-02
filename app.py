@@ -3,10 +3,17 @@ import yfinance as yf
 import numpy as np
 import pandas as pd
 import requests
+from datetime import datetime, timezone
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, VotingRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from textblob import TextBlob
+from supabase import create_client
+
+SUPABASE_URL = "https://uwhfboxiuvkorhhjeypy.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3aGZib3hpdXZrb3JoaGpleXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTI3MDQsImV4cCI6MjA5MzMyODcwNH0.byC_0Cceo3B1jIgsm0maWBJetFtCHR-K40HaUJ1Otzg"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(layout="wide")
 st.title("Crypto Prediction Dashboard")
@@ -27,6 +34,47 @@ crypto_names = {
 }
 
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
+
+def save_prediction(crypto, signal, prediction):
+    try:
+        supabase.table("predictions").insert({
+            "crypto": crypto,
+            "signal": signal,
+            "prediction": float(prediction),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "was_correct": None
+        }).execute()
+    except Exception:
+        pass
+
+def update_past_predictions():
+    try:
+        result = supabase.table("predictions").select("*").is_("was_correct", "null").execute()
+        for row in result.data:
+            try:
+                ticker = yf.Ticker(row["crypto"])
+                data = ticker.history(period="2d", interval="1h")
+                if len(data) > 1:
+                    actual_return = float(data["Close"].pct_change().iloc[-1])
+                    was_correct = (row["signal"] == "LONG" and actual_return > 0) or (row["signal"] == "SHORT" and actual_return < 0)
+                    supabase.table("predictions").update({
+                        "was_correct": was_correct,
+                        "actual_return": actual_return
+                    }).eq("id", row["id"]).execute()
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+def get_historical_accuracy(crypto):
+    try:
+        result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_correct", "null").execute()
+        if result.data and len(result.data) > 0:
+            correct = sum(1 for r in result.data if r["was_correct"])
+            return correct / len(result.data)
+        return None
+    except Exception:
+        return None
 
 def calculate_rsi(prices, period=14):
     delta = prices.diff()
@@ -156,7 +204,12 @@ def get_signal(crypto):
     sentiment_label = "Positive" if news_sentiment > 0 else "Negative" if news_sentiment < 0 else "Neutral"
     fg_label = "Greed" if fear_greed > 0 else "Fear"
 
-    return signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label
+    save_prediction(crypto, signal, prediction)
+    historical_accuracy = get_historical_accuracy(crypto)
+
+    return signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy
+
+update_past_predictions()
 
 for left, right in pairs:
     col1, col2 = st.columns(2)
@@ -164,7 +217,7 @@ for left, right in pairs:
         with col:
             st.markdown("### " + crypto)
             try:
-                signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label = get_signal(crypto)
+                signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy = get_signal(crypto)
                 color = "green" if signal == "LONG" else "red"
                 st.markdown("**Signal:** :" + color + "[" + signal + "] | **Multiply:** " + multiplier)
                 st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_profit, 2)) + " | SL: $" + str(round(stop_loss, 2)))
@@ -172,6 +225,8 @@ for left, right in pairs:
                 st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ")")
                 st.write("News Sentiment: " + sentiment_label + " | Market: " + fg_label)
                 st.write("Model Accuracy: " + str(round(accuracy * 100, 2)) + "%")
+                if historical_accuracy is not None:
+                    st.write("Historical Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
                 st.line_chart(chart_data["Close"])
             except Exception as e:
                 st.write("Error: " + str(e))
