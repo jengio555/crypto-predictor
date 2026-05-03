@@ -18,6 +18,22 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 st.set_page_config(layout="wide")
 st.title("Crypto Prediction Dashboard")
 
+st.sidebar.title("Investment Settings")
+total_balance = st.sidebar.number_input("Total Balance to Invest ($)", min_value=1.0, value=18.97, step=1.0)
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Risk Level**")
+risk_level = st.sidebar.selectbox("Select Risk Level", ["Conservative", "Moderate", "Aggressive"])
+
+if risk_level == "Conservative":
+    max_per_trade = 0.10
+    max_leverage = 2
+elif risk_level == "Moderate":
+    max_per_trade = 0.20
+    max_leverage = 5
+else:
+    max_per_trade = 0.30
+    max_leverage = 10
+
 cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-USD", "BCH-USD", "ZEN-USD"]
 
 crypto_names = {
@@ -35,7 +51,7 @@ crypto_names = {
 
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
 
-def save_prediction(crypto, signal, prediction):
+def save_prediction(crypto, signal, prediction, current_price):
     try:
         supabase.table("predictions").insert({
             "crypto": crypto,
@@ -138,7 +154,6 @@ def get_signal(crypto):
     coin_name = crypto_names[crypto]
     ticker = yf.Ticker(crypto)
     train_data = ticker.history(period="730d", interval="1d")
-    chart_data = ticker.history(period="1d", interval="1m")
     current_price = float(train_data["Close"].iloc[-1])
 
     train_data = calculate_features(train_data)
@@ -181,35 +196,73 @@ def get_signal(crypto):
     confidence = min(abs(combined_score) * 100, 100)
     if confidence > 66:
         confidence_label = "High Confidence"
+        allocation_pct = max_per_trade
+        suggested_leverage = min(max_leverage, 5)
     elif confidence > 33:
         confidence_label = "Medium Confidence"
+        allocation_pct = max_per_trade * 0.5
+        suggested_leverage = min(max_leverage, 3)
     else:
         confidence_label = "Low Confidence - Use Caution"
+        allocation_pct = max_per_trade * 0.25
+        suggested_leverage = 1
+
+    suggested_amount = round(total_balance * allocation_pct, 2)
+    suggested_amount = max(suggested_amount, 1.0)
 
     rsi_val = float(train_data["rsi"].iloc[-1])
     if rsi_val > 70:
         rsi_note = "Overbought"
+        close_alert = True
     elif rsi_val < 30:
         rsi_note = "Oversold"
+        close_alert = True
     else:
         rsi_note = "Neutral"
+        close_alert = False
 
-    if abs(combined_score) > 0.02:
-        multiplier = "3X"
-    elif abs(combined_score) > 0.01:
-        multiplier = "2X"
-    else:
-        multiplier = "1X"
+    ma5 = float(train_data["ma_5"].iloc[-1])
+    ma20 = float(train_data["ma_20"].iloc[-1])
+    if signal == "LONG" and ma5 < ma20:
+        close_alert = True
+    elif signal == "SHORT" and ma5 > ma20:
+        close_alert = True
 
     sentiment_label = "Positive" if news_sentiment > 0 else "Negative" if news_sentiment < 0 else "Neutral"
     fg_label = "Greed" if fear_greed > 0 else "Fear"
 
-    save_prediction(crypto, signal, prediction)
+    save_prediction(crypto, signal, prediction, current_price)
     historical_accuracy = get_historical_accuracy(crypto)
 
-    return signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy
+    return signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score
 
 update_past_predictions()
+
+st.markdown("---")
+st.subheader("Top Opportunities Right Now")
+
+all_signals = []
+for crypto in cryptos:
+    try:
+        result = get_signal(crypto)
+        all_signals.append((crypto, result))
+    except Exception:
+        pass
+
+all_signals.sort(key=lambda x: abs(x[1][14]), reverse=True)
+
+top_3 = all_signals[:3]
+if top_3:
+    st.markdown("#### Best Trades Right Now:")
+    for crypto, result in top_3:
+        signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score = result
+        color = "green" if signal == "LONG" else "red"
+        st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X leverage")
+
+st.markdown("---")
+st.subheader("All Crypto Signals")
+
+close_alerts = []
 
 for left, right in pairs:
     col1, col2 = st.columns(2)
@@ -217,17 +270,25 @@ for left, right in pairs:
         with col:
             st.markdown("### " + crypto)
             try:
-                signal, multiplier, current_price, take_profit, stop_loss, chart_data, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy = get_signal(crypto)
+                signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score = next(r for c, r in all_signals if c == crypto)
                 color = "green" if signal == "LONG" else "red"
-                st.markdown("**Signal:** :" + color + "[" + signal + "] | **Multiply:** " + multiplier)
+                st.markdown("**Signal:** :" + color + "[" + signal + "] | **Confidence:** " + confidence_label)
                 st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_profit, 2)) + " | SL: $" + str(round(stop_loss, 2)))
-                st.write("Confidence: " + confidence_label)
+                st.write("Suggested Investment: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X leverage")
                 st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ")")
-                st.write("News Sentiment: " + sentiment_label + " | Market: " + fg_label)
+                st.write("News: " + sentiment_label + " | Market: " + fg_label)
                 st.write("Model Accuracy: " + str(round(accuracy * 100, 2)) + "%")
                 if historical_accuracy is not None:
-                    st.write("Historical Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
-                st.line_chart(chart_data["Close"])
+                    st.write("Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
+                if close_alert:
+                    st.warning("CLOSE POSITION ALERT: Consider closing " + crypto + " now!")
+                    close_alerts.append(crypto)
             except Exception as e:
                 st.write("Error: " + str(e))
             st.divider()
+
+if close_alerts:
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### CLOSE ALERTS")
+    for alert in close_alerts:
+        st.sidebar.error("Close " + alert + " position now!")
