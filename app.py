@@ -280,3 +280,62 @@ for left, right in pairs:
 
 if close_alerts:
     st.error("CLOSE ALERTS: " + ", ".join(close_alerts))
+update_past_predictions()
+
+all_signals = []
+for crypto in cryptos:
+    try:
+        result = get_signal(crypto)
+        all_signals.append((crypto, result))
+    except Exception:
+        pass
+
+all_signals.sort(key=lambda x: abs(x[1][14]), reverse=True)
+
+affordable = [(c, r) for c, r in all_signals if r[15]]
+top_3 = affordable[:3]
+
+st.markdown("---")
+st.subheader("Best Trades Right Now")
+if top_3:
+    for crypto, result in top_3:
+        signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = result
+        color = "green" if signal == "LONG" else "red"
+        status = "🔴 CLOSE NOW!" if close_alert else "🟢 HOLD"
+        st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X | " + status)
+else:
+    st.warning("Balance of $" + str(total_balance) + " is below the $" + str(min_allocation) + " minimum. Consider depositing more funds.")
+
+st.markdown("---")
+st.subheader("All Crypto Signals")
+
+close_alerts = []
+
+for left, right in pairs:
+    col1, col2 = st.columns(2)
+    for col, crypto in zip([col1, col2], [left, right]):
+        with col:
+            st.markdown("### " + crypto)
+            try:
+                signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = next(r for c, r in all_signals if c == crypto)
+                color = "green" if signal == "LONG" else "red"
+                st.markdown("**Signal:** :" + color + "[" + signal + "] | " + confidence_label)
+                st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_profit, 2)) + " | SL: $" + str(round(stop_loss, 2)))
+                if can_afford:
+                    st.write("Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X")
+                else:
+                    st.error("Need $" + str(suggested_amount) + " minimum")
+                st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ")")
+                st.write("News: " + sentiment_label + " | Market: " + fg_label)
+                st.write("Accuracy: " + str(round(accuracy * 100, 2)) + "%")
+                if historical_accuracy is not None:
+                    st.write("Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
+                if close_alert:
+                    st.warning("CLOSE NOW!")
+                    close_alerts.append(crypto)
+            except Exception as e:
+                st.write("Error: " + str(e))
+            st.divider()
+
+if close_alerts:
+    st.error("CLOSE ALERTS: " + ", ".join(close_alerts))
