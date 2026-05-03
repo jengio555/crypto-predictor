@@ -350,6 +350,24 @@ for crypto in cryptos:
         pass
 
 all_signals.sort(key=lambda x: abs(x[1][14]), reverse=True)
+affordable = [(c, r) for c, r in all_signals if r[15]]
+top_3 = affordable[:3]
+
+st.markdown("---")
+st.subheader("Best Trades Right Now")
+if top_3:
+    for crypto, result in top_3:
+        signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = result
+        color = "green" if signal == "LONG" else "red"
+        status = "🔴 CLOSE NOW!" if close_alert else "🟢 HOLD"
+        st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X | " + status)
+else:
+    st.warning("Balance of $" + str(total_balance) + " is below the $" + str(min_allocation) + " minimum.")
+
+st.markdown("---")
+st.subheader("All Crypto Signals")
+
+close_alerts = []
 
 affordable = [(c, r) for c, r in all_signals if r[15]]
 top_3 = affordable[:3]
