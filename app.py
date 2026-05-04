@@ -209,6 +209,13 @@ if top_3:
                     str(round(suggested_amount, 2)) + " at " + str(leverage) + "x | " + status)
         if close_alert:
             send_telegram("CLOSE ALERT: " + crypto + " - Close your position now!")
+        else:
+            send_telegram("OPEN TRADE: " + crypto + " - Signal: " + signal + " | Invest $" +
+                         str(round(suggested_amount, 2)) + " at " + str(leverage) + "x leverage" +
+                         " | Entry: $" + str(round(current_price, 2)) +
+                         " | TP: $" + str(round(take_profit, 2)) +
+                         " | SL: $" + str(round(stop_loss, 2)))
+
 else:
     st.warning("Balance too low for minimum allocation of $" + str(min_allocation))
 
