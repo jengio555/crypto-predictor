@@ -8,10 +8,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from supabase import create_client
 
-SUPABASE_URL = "https://uwhfboxiuvkorhhjeypy.supabase.co"
-SUPABASE_KEY = st.secrets["YeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3aGZib3hpdXZrb3JoaGpleXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTI3MDQsImV4cCI6MjA5MzMyODcwNH0.byC_0Cceo3B1jIgsm0maWBJetFtCHR-K40HaUJ1Otzg"]
-TELEGRAM_TOKEN = st.secrets["8634819729:AAGgwvhtBiTZngD9eYNpPoTfx51aLeRorRA"]
-TELEGRAM_CHAT_ID = st.secrets["6745125647"]
+SUPABASE_URL = “https://uwhfboxiuvkorhhjeypy.supabase.co”
+SUPABASE_KEY = st.secrets[“SUPABASE_KEY”]
+TELEGRAM_TOKEN = st.secrets[“TELEGRAM_TOKEN”]
+TELEGRAM_CHAT_ID = st.secrets[“TELEGRAM_CHAT_ID”]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
