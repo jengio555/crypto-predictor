@@ -115,7 +115,10 @@ elif rsi_val < 30:
 else:
         rsi_note = "Neutral"
         close_alert = False
-    if signal == "LONG" and ma5 < ma20:
+    
+
+
+if signal == "LONG" and ma5 < ma20:
         close_alert = True
     elif signal == "SHORT" and ma5 > ma20:
         close_alert = True
