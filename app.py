@@ -142,7 +142,7 @@ def calculate_features(data):
 def get_signal(crypto):
     coin_name = crypto_names[crypto]
     ticker = yf.Ticker(crypto)
-    train_data = ticker.history(period="90d", interval="1d")
+    train_data = ticker.history(period="30d", interval="1h")
     current_price = float(train_data["Close"].iloc[-1])
 
     train_data = calculate_features(train_data)
