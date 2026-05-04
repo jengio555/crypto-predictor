@@ -236,7 +236,14 @@ for crypto in cryptos:
     except Exception:
         pass
 
-all_signals.sort(key=lambda x: abs(x[1][14]), reverse=True)
+def lucrative_score(item):
+    result = item[1]
+    combined_score = abs(result[14])
+    volatility = result[5] - result[6]
+    momentum = abs(result[13])
+    return combined_score + (volatility * 0.0001) + (momentum * 10)
+
+all_signals.sort(key=lucrative_score, reverse=True)
 
 affordable = [(c, r) for c, r in all_signals if r[15]]
 top_3 = affordable[:3]
