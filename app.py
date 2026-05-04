@@ -44,21 +44,24 @@ def save_prediction(crypto, signal, prediction):
     except Exception:
         pass
 def get_historical_accuracy(crypto):
-try:
+    try:
         result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_correct", "null").execute()
         if result.data and len(result.data) > 0:
-
-correct = sum(1 for r in result.data if r["was_correct"])
             correct = sum(1 for r in result.data if r["was_correct"])
             return correct / len(result.data)
         return None
-return None
+    except Exception:
+        return None
+
 def get_fear_greed():
-try:
-r = requests.get("https://api.alternative.me/fng/", timeout=5)
-value = int(r.json()["data"][0]["value"])
-label = "Greed" if value > 50 else "Fear"
-return (value - 50) / 50, label
+    try:
+        r = requests.get("https://api.alternative.me/fng/", timeout=5)
+        value = int(r.json()["data"][0]["value"])
+        label = "Greed" if value > 50 else "Fear"
+        return (value - 50) / 50, label
+    except Exception:
+        return 0.0, "Neutral"
+
 except Exception:
 return 0.0, "Neutral"
 @st.cache_data(ttl=3600)
