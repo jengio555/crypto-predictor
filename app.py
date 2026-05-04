@@ -97,7 +97,10 @@ stop_loss = current_price * 0.97
 rsi_val = float(data["rsi"].iloc[-1])
 ma5 = float(data["ma_5"].iloc[-1])
 ma20 = float(data["ma_20"].iloc[-1])
-    if rsi_val > 70:
+
+
+
+if rsi_val > 70:
         rsi_note = "Overbought"
         close_alert = True
     elif rsi_val < 30:
