@@ -23,7 +23,6 @@ def send_telegram(msg):
         requests.post("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage", data={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
     except Exception:
         pass
-
 def save_prediction(crypto, signal, prediction):
 try:
 supabase.table("predictions").insert({
