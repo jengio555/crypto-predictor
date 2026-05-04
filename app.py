@@ -103,7 +103,10 @@ ma20 = float(data["ma_20"].iloc[-1])
 if rsi_val > 70:
         rsi_note = "Overbought"
         close_alert = True
-    elif rsi_val < 30:
+
+
+
+elif rsi_val < 30:
         rsi_note = "Oversold"
         close_alert = True
     else:
