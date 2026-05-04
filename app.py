@@ -10,9 +10,9 @@ from sklearn.preprocessing import StandardScaler
 from textblob import TextBlob
 from supabase import create_client
 SUPABASE_URL = "https://uwhfboxiuvkorhhjeypy.supabase.co"
-SUPABASE_KEY = "YeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3aGZib3hpdXZrb3JoaGpleXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTI3MDQsImV4cCI6MjA5MzMyODcwNH0.byC_0Cceo3B1jIgsm0maWBJetFtCHR-K40HaUJ1Otzg"
-TELEGRAM_TOKEN = "8634819729:AAGgwvhtBiTZngD9eYNpPoTfx51aLeRorRA"
-TELEGRAM_CHAT_ID = "6745125647"
+SUPABASE_KEY = st.secrets["YeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3aGZib3hpdXZrb3JoaGpleXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTI3MDQsImV4cCI6MjA5MzMyODcwNH0.byC_0Cceo3B1jIgsm0maWBJetFtCHR-K40HaUJ1Otzg"]
+TELEGRAM_TOKEN = st.secrets["8634819729:AAGgwvhtBiTZngD9eYNpPoTfx51aLeRorRA"]
+TELEGRAM_CHAT_ID = st.secrets["6745125647"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 st.set_page_config(layout="wide")
 st.title("Crypto Prediction Dashboard")
@@ -20,8 +20,7 @@ total_balance = 18.97
 min_allocation = 12.0
 max_per_trade = 0.20
 max_leverage = 5
-cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-USD", "BCH-USD", "ZEN-USD"]
-crypto_names = {
+cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-crypto_names = {
 "BTC-USD": "bitcoin",
 "ETH-USD": "ethereum",
 "ADA-USD": "cardano",
@@ -34,7 +33,6 @@ crypto_names = {
 "ZEN-USD": "horizen"
 }
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
-
 def send_telegram_alert(message):
 try:
 url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage"
@@ -61,8 +59,7 @@ ticker = yf.Ticker(row["crypto"])
 data = ticker.history(period="2d", interval="1h")
 if len(data) > 1:
 actual_return = float(data["Close"].pct_change().iloc[-1])
-was_correct = (row["signal"] == "LONG" and actual_return > 0) or (row["signal"] == "SHORT" and actual_return < 0)
-supabase.table("predictions").update({
+was_correct = (row["signal"] == "LONG" and actual_return > 0) or (row["signal"] supabase.table("predictions").update({
 "was_correct": was_correct,
 "actual_return": actual_return
 }).eq("id", row["id"]).execute()
@@ -72,14 +69,12 @@ except Exception:
 pass
 def get_historical_accuracy(crypto):
 try:
-result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_correct", "null").execute()
-if result.data and len(result.data) > 0:
+result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_if result.data and len(result.data) > 0:
 correct = sum(1 for r in result.data if r["was_correct"])
 return correct / len(result.data)
 return None
 except Exception:
 return None
-
 def calculate_rsi(prices, period=14):
 delta = prices.diff()
 gain = delta.where(delta > 0, 0).rolling(window=period).mean()
@@ -123,10 +118,7 @@ data["ma_50"] = data["Close"].rolling(50).mean()
 data["rsi"] = calculate_rsi(data["Close"])
 data["macd"] = data["Close"].ewm(span=12).mean() - data["Close"].ewm(span=26).mean()
 data["macd_signal"] = data["macd"].ewm(span=9).mean()
-
-data["bollinger_upper"] = data["Close"].rolling(20).mean() + 2 * data["Close"].rolling(20).std()
-data["bollinger_lower"] = data["Close"].rolling(20).mean() - 2 * data["Close"].rolling(20).std()
-data["bollinger_width"] = data["bollinger_upper"] - data["bollinger_lower"]
+data["bollinger_upper"] = data["Close"].rolling(20).mean() + 2 * data["Close"].rolling(20).data["bollinger_lower"] = data["Close"].rolling(20).mean() - 2 * data["Close"].rolling(20).data["bollinger_width"] = data["bollinger_upper"] - data["bollinger_lower"]
 data["volume_ma"] = data["Volume"].rolling(10).mean()
 data["volume_ratio"] = data["Volume"] / data["volume_ma"]
 data["price_momentum"] = data["Close"].pct_change(5)
@@ -155,10 +147,8 @@ X = train_data[feature_cols].values.astype(float)
 y = train_data["returns"].values.astype(float)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
-gb = GradientBoostingRegressor(n_estimators=100, max_depth=5, learning_rate=0.05, random_state=42)
-ensemble = VotingRegressor([("rf", rf), ("gb", gb)])
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=rf = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)
+gb = GradientBoostingRegressor(n_estimators=100, max_depth=5, learning_rate=0.05, random_ensemble = VotingRegressor([("rf", rf), ("gb", gb)])
 ensemble.fit(X_train, y_train)
 accuracy = ensemble.score(X_test, y_test)
 latest = scaler.transform([train_data[feature_cols].iloc[-1].values.astype(float)])
@@ -170,7 +160,6 @@ stop_loss = current_price * 0.97
 confidence = min(abs(combined_score) * 100, 100)
 if confidence > 66:
 confidence_label = "High Confidence"
-
 allocation_pct = max_per_trade
 suggested_leverage = min(max_leverage, 5)
 elif confidence > 33:
@@ -200,12 +189,10 @@ if signal == "LONG" and ma5 < ma20:
 close_alert = True
 elif signal == "SHORT" and ma5 > ma20:
 close_alert = True
-sentiment_label = "Positive" if news_sentiment > 0 else "Negative" if news_sentiment < 0 else "Neutral"
-fg_label = "Greed" if fear_greed > 0 else "Fear"
+sentiment_label = "Positive" if news_sentiment > 0 else "Negative" if news_sentiment < 0 fg_label = "Greed" if fear_greed > 0 else "Fear"
 save_prediction(crypto, signal, prediction, current_price)
 historical_accuracy = get_historical_accuracy(crypto)
-return signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford
-update_past_predictions()
+return signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, update_past_predictions()
 all_signals = []
 for crypto in cryptos:
 try:
@@ -215,7 +202,6 @@ except Exception:
 pass
 def lucrative_score(item):
 result = item[1]
-
 combined_score = abs(result[14])
 volatility = result[5] - result[6]
 momentum = abs(result[13])
@@ -227,15 +213,12 @@ st.markdown("---")
 st.subheader("Best Trades Right Now")
 if top_3:
 for crypto, result in top_3:
-signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = result
-color = "green" if signal == "LONG" else "red"
+signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, color = "green" if signal == "LONG" else "red"
 status = "CLOSE NOW!" if close_alert else "HOLD"
-st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X | Status: " + status)
-if close_alert:
+st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_if close_alert:
 send_telegram_alert("CLOSE ALERT: " + crypto + " - Close your position now!")
 else:
-st.warning("Balance of $" + str(total_balance) + " is below the $" + str(min_allocation) + " minimum. Consider depositing more funds.")
-st.markdown("---")
+st.warning("Balance of $" + str(total_balance) + " is below the $" + str(min_allocation) st.markdown("---")
 st.subheader("All Crypto Signals")
 close_alerts = []
 for left, right in pairs:
@@ -244,20 +227,16 @@ for col, crypto in zip([col1, col2], [left, right]):
 with col:
 st.markdown("### " + crypto)
 try:
-signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = next(r for c, r in all_signals if c == crypto)
-color = "green" if signal == "LONG" else "red"
+signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_color = "green" if signal == "LONG" else "red"
 st.markdown("**Signal:** :" + color + "[" + signal + "] | " + confidence_label)
-st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_profit, 2)) + " | SL: $" + str(round(stop_loss, 2)))
-if can_afford:
-st.write("Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X")
-else:
+st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_if can_afford:
+st.write("Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) else:
 st.error("Need $" + str(suggested_amount) + " minimum")
 st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ")")
 st.write("News: " + sentiment_label + " | Market: " + fg_label)
 st.write("Accuracy: " + str(round(accuracy * 100, 2)) + "%")
 if historical_accuracy is not None:
 st.write("Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
-
 if close_alert:
 st.warning("CLOSE NOW!")
 close_alerts.append(crypto)
