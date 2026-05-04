@@ -41,6 +41,12 @@ crypto_names = {
 }
 
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
+def send_telegram_alert(message):
+    try:
+        url = "https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage"
+        requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message})
+    except Exception:
+        pass
 
 def save_prediction(crypto, signal, prediction, current_price):
     try:
