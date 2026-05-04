@@ -263,7 +263,7 @@ if top_3:
         signal, suggested_amount, suggested_leverage, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, sentiment_label, fg_label, historical_accuracy, close_alert, combined_score, can_afford = result
         color = "green" if signal == "LONG" else "red"
         status = "CLOSE NOW!" if close_alert else "HOLD"
-        if close_alert:
+if close_alert:
     send_telegram_alert("CLOSE ALERT: " + crypto + " - Close your position now!")
 
         st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | Invest: $" + str(suggested_amount) + " at " + str(suggested_leverage) + "X | Status: " + status)
