@@ -62,8 +62,6 @@ def get_fear_greed():
     except Exception:
         return 0.0, "Neutral"
 
-except Exception:
-return 0.0, "Neutral"
 @st.cache_data(ttl=3600)
 def get_signal(crypto):
 ticker = yf.Ticker(crypto)
