@@ -8,48 +8,48 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from supabase import create_client
 
-SUPABASE_URL = “https://uwhfboxiuvkorhhjeypy.supabase.co”
-SUPABASE_KEY = st.secrets[“SUPABASE_KEY”]
-TELEGRAM_TOKEN = st.secrets[“TELEGRAM_TOKEN”]
-TELEGRAM_CHAT_ID = st.secrets[“TELEGRAM_CHAT_ID”]
+SUPABASE_URL = "https://uwhfboxiuvkorhhjeypy.supabase.co"
+SUPABASE_KEY = st.secrets["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3aGZib3hpdXZrb3JoaGpleXB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTI3MDQsImV4cCI6MjA5MzMyODcwNH0.byC_0Cceo3B1jIgsm0maWBJetFtCHR-K40HaUJ1Otzg"]
+TELEGRAM_TOKEN = st.secrets["8634819729:AAGgwvhtBiTZngD9eYNpPoTfx51aLeRorRA"]
+TELEGRAM_CHAT_ID = st.secrets["6745125647"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-st.set_page_config(layout=“wide”)
-st.title(“Crypto Prediction Dashboard”)
+st.set_page_config(layout="wide")
+st.title("Crypto Prediction Dashboard")
 
 total_balance = 18.97
 min_allocation = 12.0
 
-cryptos = [“BTC-USD”, “ETH-USD”, “ADA-USD”, “XRP-USD”, “SOL-USD”, “DOGE-USD”, “LINK-USD”, “LTC-USD”]
+cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-USD"]
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
 
 def send_telegram(msg):
 try:
 requests.post(
-“https://api.telegram.org/bot” + TELEGRAM_TOKEN + “/sendMessage”,
-data={“chat_id”: TELEGRAM_CHAT_ID, “text”: msg}
+"https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage",
+data={"chat_id": TELEGRAM_CHAT_ID, "text": msg}
 )
 except Exception:
 pass
 
 def save_prediction(crypto, signal, prediction):
 try:
-supabase.table(“predictions”).insert({
-“crypto”: crypto,
-“signal”: signal,
-“prediction”: float(prediction),
-“timestamp”: datetime.now(timezone.utc).isoformat(),
-“was_correct”: None
+supabase.table("predictions").insert({
+"crypto": crypto,
+"signal": signal,
+"prediction": float(prediction),
+"timestamp": datetime.now(timezone.utc).isoformat(),
+"was_correct": None
 }).execute()
 except Exception:
 pass
 
 def get_historical_accuracy(crypto):
 try:
-result = supabase.table(“predictions”).select(”*”).eq(“crypto”, crypto).not_.is_(“was_correct”, “null”).execute()
+result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_correct", "null").execute()
 if result.data and len(result.data) > 0:
-correct = sum(1 for r in result.data if r[“was_correct”])
+correct = sum(1 for r in result.data if r["was_correct"])
 return correct / len(result.data)
 return None
 except Exception:
@@ -57,17 +57,17 @@ return None
 
 def get_fear_greed():
 try:
-r = requests.get(“https://api.alternative.me/fng/”, timeout=5)
-value = int(r.json()[“data”][0][“value”])
-label = “Greed” if value > 50 else “Fear”
+r = requests.get("https://api.alternative.me/fng/", timeout=5)
+value = int(r.json()["data"][0]["value"])
+label = "Greed" if value > 50 else "Fear"
 return (value - 50) / 50, label
 except Exception:
-return 0.0, “Neutral”
+return 0.0, "Neutral"
 
 @st.cache_data(ttl=3600)
 def get_signal(crypto):
 ticker = yf.Ticker(crypto)
-data = ticker.history(period=“30d”, interval=“1h”)
+data = ticker.history(period="30d", interval="1h")
 
 ```
 current_price = float(data["Close"].iloc[-1])
@@ -170,8 +170,8 @@ all_signals.sort(key=lambda x: abs(x[1][9]), reverse=True)
 affordable = [(c, r) for c, r in all_signals if r[12]]
 top_3 = affordable[:3]
 
-st.markdown(”—”)
-st.subheader(“Best Trades Right Now”)
+st.markdown("—")
+st.subheader("Best Trades Right Now")
 
 if top_3:
 for crypto, result in top_3:
@@ -189,17 +189,17 @@ leverage, can_afford, close_alert, fg_label, historical_accuracy) = result
 ```
 
 else:
-st.warning(“Balance too low for minimum allocation of $” + str(min_allocation))
+st.warning("Balance too low for minimum allocation of $" + str(min_allocation))
 
-st.markdown(”—”)
-st.subheader(“All Crypto Signals”)
+st.markdown("—")
+st.subheader("All Crypto Signals")
 
 close_alerts = []
 for left, right in pairs:
 col1, col2 = st.columns(2)
 for col, crypto in zip([col1, col2], [left, right]):
 with col:
-st.markdown(”### “ + crypto)
+st.markdown("### " + crypto)
 try:
 (signal, current_price, take_profit, stop_loss, rsi_val, rsi_note,
 accuracy, confidence, confidence_label, combined, suggested_amount,
@@ -232,4 +232,4 @@ leverage, can_afford, close_alert, fg_label, historical_accuracy) = get_signal(c
 ```
 
 if close_alerts:
-st.error(“CLOSE ALERTS: “ + “, “.join(close_alerts))
+st.error("CLOSE ALERTS: " + ", ".join(close_alerts))
