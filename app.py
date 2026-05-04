@@ -97,77 +97,91 @@ stop_loss = current_price * 0.97
 rsi_val = float(data["rsi"].iloc[-1])
 ma5 = float(data["ma_5"].iloc[-1])
 ma20 = float(data["ma_20"].iloc[-1])
-if rsi_val > 70:
-rsi_note = "Overbought"
-close_alert = True
-elif rsi_val < 30:
-rsi_note = "Oversold"
-close_alert = True
-else:
-rsi_note = "Neutral"
-close_alert = False
-if signal == "LONG" and ma5 < ma20:
-close_alert = True
-elif signal == "SHORT" and ma5 > ma20:
-close_alert = True
-confidence = min(abs(combined) * 100, 100)
-if confidence > 66:
-confidence_label = "High Confidence"
-suggested_amount = max(total_balance * 0.20, min_allocation)
-leverage = 5
-elif confidence > 33:
-confidence_label = "Medium Confidence"
-suggested_amount = max(total_balance * 0.10, min_allocation)
-leverage = 3
-else:
-confidence_label = "Low Confidence"
-suggested_amount = max(total_balance * 0.05, min_allocation)
-leverage = 1
-can_afford = total_balance >= suggested_amount
-save_prediction(crypto, signal, prediction)
-historical_accuracy = get_historical_accuracy(crypto)
-return signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_all_signals = []
+    if rsi_val > 70:
+        rsi_note = "Overbought"
+        close_alert = True
+    elif rsi_val < 30:
+        rsi_note = "Oversold"
+        close_alert = True
+    else:
+        rsi_note = "Neutral"
+        close_alert = False
+    if signal == "LONG" and ma5 < ma20:
+        close_alert = True
+    elif signal == "SHORT" and ma5 > ma20:
+        close_alert = True
+    confidence = min(abs(combined) * 100, 100)
+    if confidence > 66:
+        confidence_label = "High Confidence"
+        suggested_amount = max(total_balance * 0.20, min_allocation)
+        leverage = 5
+    elif confidence > 33:
+        confidence_label = "Medium Confidence"
+        suggested_amount = max(total_balance * 0.10, min_allocation)
+        leverage = 3
+    else:
+        confidence_label = "Low Confidence"
+        suggested_amount = max(total_balance * 0.05, min_allocation)
+        leverage = 1
+    can_afford = total_balance >= suggested_amount
+    save_prediction(crypto, signal, prediction)
+    historical_accuracy = get_historical_accuracy(crypto)
+    return signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, close_alert, combined, suggested_amount, leverage, can_afford, fg_label, historical_accuracy
+
+all_signals = []
 for crypto in cryptos:
-try:
-result = get_signal(crypto)
-all_signals.append((crypto, result))
-except Exception:
-pass
+    try:
+        result = get_signal(crypto)
+        all_signals.append((crypto, result))
+    except Exception:
+        pass
+
 all_signals.sort(key=lambda x: abs(x[1][9]), reverse=True)
 affordable = [(c, r) for c, r in all_signals if r[12]]
 top_3 = affordable[:3]
+
 st.markdown("---")
 st.subheader("Best Trades Right Now")
 if top_3:
-for crypto, result in top_3:
-signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_color = "green" if signal == "LONG" else "red"
-status = "CLOSE NOW!" if close_alert else "HOLD"
-st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | $" + str(round(suggested_if close_alert:
-send_telegram("CLOSE ALERT: " + crypto + " - Close your position now!")
+    for crypto, result in top_3:
+        signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, close_alert, combined, suggested_amount, leverage, can_afford, fg_label, historical_accuracy = result
+        color = "green" if signal == "LONG" else "red"
+        status = "CLOSE NOW!" if close_alert else "HOLD"
+        st.markdown("**" + crypto + "** - :" + color + "[" + signal + "] | $" + str(round(suggested_amount, 2)) + " at " + str(leverage) + "X | Status: " + status)
+        if close_alert:
+            send_telegram("CLOSE ALERT: " + crypto + " - Close your position now!")
 else:
-st.warning("Balance too low for minimum allocation of $" + str(min_allocation))
+    st.warning("Balance too low for minimum allocation of $" + str(min_allocation))
+
 st.markdown("---")
 st.subheader("All Crypto Signals")
 close_alerts = []
+
 for left, right in pairs:
-col1, col2 = st.columns(2)
-for col, crypto in zip([col1, col2], [left, right]):
-with col:
-st.markdown("### " + crypto)
-try:
-signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_color = "green" if signal == "LONG" else "red"
-st.markdown("**Signal:** :" + color + "[" + signal + "] | " + confidence_label)
-st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_if can_afford:
-st.write("Invest: $" + str(round(suggested_amount, 2)) + " at " + str(leverage) else:
-st.error("Need $" + str(round(suggested_amount, 2)) + " minimum")
-st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ") | Market: " st.write("Model Accuracy: " + str(round(accuracy * 100, 2)) + "%")
-if historical_accuracy is not None:
-st.write("Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
-if close_alert:
-st.warning("CLOSE NOW!")
-close_alerts.append(crypto)
-except Exception as e:
-st.write("Error: " + str(e))
-st.divider()
+    col1, col2 = st.columns(2)
+    for col, crypto in zip([col1, col2], [left, right]):
+        with col:
+            st.markdown("### " + crypto)
+            try:
+                signal, current_price, take_profit, stop_loss, rsi_val, rsi_note, accuracy, confidence_label, close_alert, combined, suggested_amount, leverage, can_afford, fg_label, historical_accuracy = next(r for c, r in all_signals if c == crypto)
+                color = "green" if signal == "LONG" else "red"
+                st.markdown("**Signal:** :" + color + "[" + signal + "] | " + confidence_label)
+                st.write("Entry: $" + str(round(current_price, 2)) + " | TP: $" + str(round(take_profit, 2)) + " | SL: $" + str(round(stop_loss, 2)))
+                if can_afford:
+                    st.write("Invest: $" + str(round(suggested_amount, 2)) + " at " + str(leverage) + "X")
+                else:
+                    st.error("Need $" + str(round(suggested_amount, 2)) + " minimum")
+                st.write("RSI: " + str(round(rsi_val, 2)) + " (" + rsi_note + ") | Market: " + fg_label)
+                st.write("Model Accuracy: " + str(round(accuracy * 100, 2)) + "%")
+                if historical_accuracy is not None:
+                    st.write("Win Rate: " + str(round(historical_accuracy * 100, 2)) + "%")
+                if close_alert:
+                    st.warning("CLOSE NOW!")
+                    close_alerts.append(crypto)
+            except Exception as e:
+                st.write("Error: " + str(e))
+            st.divider()
+
 if close_alerts:
-st.error("CLOSE ALERTS: " + ", ".join(close_alerts))
+    st.error("CLOSE ALERTS: " + ", ".join(close_alerts))
+)
