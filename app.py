@@ -109,7 +109,10 @@ if rsi_val > 70:
 elif rsi_val < 30:
         rsi_note = "Oversold"
         close_alert = True
-    else:
+
+
+
+else:
         rsi_note = "Neutral"
         close_alert = False
     if signal == "LONG" and ma5 < ma20:
