@@ -23,15 +23,26 @@ def send_telegram(msg):
         requests.post("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage", data={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
     except Exception:
         pass
+def get_historical_accuracy(crypto):
+    try:
+        result = supabase.table("predictions").select("*").eq("crypto", crypto).execute()
+        if result.data and len(result.data) > 0:
+            correct = sum(1 for r in result.data if r.get("was_correct") == True)
+            return correct / len(result.data)
+        return None
+    except Exception:
+        return None
 def save_prediction(crypto, signal, prediction):
-try:
-supabase.table("predictions").insert({
-"crypto": crypto,
-"signal": signal,
-"prediction": float(prediction),
-"timestamp": datetime.now(timezone.utc).isoformat(),
-"was_correct": None
-}).execute()
+    try:
+        supabase.table("predictions").insert({
+            "crypto": crypto,
+            "signal": signal,
+            "prediction": float(prediction),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "was_correct": None
+        }).execute()
+    except Exception:
+        pass
 except Exception:
 pass
 def get_historical_accuracy(crypto):
