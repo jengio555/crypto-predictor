@@ -11,7 +11,9 @@ from textblob import TextBlob
 from supabase import create_client
 
 SUPABASE_URL = "https://uwhfboxiuvkorhhjeypy.supabase.co"
-SUPABASE_KEY = "YOUR_ANON_KEY_HERE"
+TELEGRAM_TOKEN = "8634819729:AAGgwvhtBiTZngD9eYNpPoTfx51aLeRorRA"
+TELEGRAM_CHAT_ID = "6745125647"
+
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
