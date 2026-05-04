@@ -16,7 +16,8 @@ st.set_page_config(layout="wide")
 st.title("Crypto Prediction Dashboard")
 total_balance = 18.97
 min_allocation = 12.0
-cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-pairs = list(zip(cryptos[::2], cryptos[1::2]))
+cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-USD", "BCH-USD", "ZEN-USD"]
+pairs = list(zip(cryptos[::2], cryptos[1::2]))
 def send_telegram(msg):
 try:
 requests.post("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage", data={"except Exception:
