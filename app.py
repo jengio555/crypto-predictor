@@ -117,13 +117,11 @@ else:
         close_alert = False
     
 
-
-if signal == "LONG" and ma5 < ma20:
+    if signal == "LONG" and ma5 < ma20:
         close_alert = True
     elif signal == "SHORT" and ma5 > ma20:
         close_alert = True
-    confidence = min(abs(combined) * 100, 100)
-    if confidence > 66:
+
         confidence_label = "High Confidence"
         suggested_amount = max(total_balance * 0.20, min_allocation)
         leverage = 5
