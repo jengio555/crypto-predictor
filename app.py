@@ -16,7 +16,7 @@ TELEGRAM_CHAT_ID = st.secrets["TELEGRAM_CHAT_ID"]
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 st.set_page_config(layout="wide")
-st.title("Crypto Prediction
+st.title("Crypto Prediction")
 
 cat > app.py << 'ENDOFFILE'
 import streamlit as st
