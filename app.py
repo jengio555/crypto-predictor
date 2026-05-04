@@ -38,7 +38,9 @@ except Exception:
 pass
 def get_historical_accuracy(crypto):
 try:
-result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_if result.data and len(result.data) > 0:
+        result = supabase.table("predictions").select("*").eq("crypto", crypto).not_.is_("was_correct", "null").execute()
+        if result.data and len(result.data) > 0:
+
 correct = sum(1 for r in result.data if r["was_correct"])
 return correct / len(result.data)
 return None
