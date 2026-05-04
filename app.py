@@ -19,12 +19,11 @@ min_allocation = 12.0
 cryptos = ["BTC-USD", "ETH-USD", "ADA-USD", "XRP-USD", "SOL-USD", "DOGE-USD", "LINK-USD", "LTC-USD", "BCH-USD", "ZEN-USD"]
 pairs = list(zip(cryptos[::2], cryptos[1::2]))
 def send_telegram(msg):
-try:
-def send_telegram(msg):
     try:
         requests.post("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/sendMessage", data={"chat_id": TELEGRAM_CHAT_ID, "text": msg})
     except Exception:
         pass
+
 def save_prediction(crypto, signal, prediction):
 try:
 supabase.table("predictions").insert({
