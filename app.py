@@ -115,9 +115,7 @@ elif rsi_val < 30:
 else:
         rsi_note = "Neutral"
         close_alert = False
-if signal == "LONG" and ma5 < ma20:
-        close_alert = True
-        if signal == "LONG" and ma5 < ma20:
+    if signal == "LONG" and ma5 < ma20:
         close_alert = True
     elif signal == "SHORT" and ma5 > ma20:
         close_alert = True
@@ -126,10 +124,15 @@ if signal == "LONG" and ma5 < ma20:
         confidence_label = "High Confidence"
         suggested_amount = max(total_balance * 0.20, min_allocation)
         leverage = 5
-
+    elif confidence > 33:
+        confidence_label = "Medium Confidence"
+        suggested_amount = max(total_balance * 0.10, min_allocation)
+        leverage = 3
     else:
         confidence_label = "Low Confidence"
         suggested_amount = max(total_balance * 0.05, min_allocation)
+        leverage = 1
+
         leverage = 1
     can_afford = total_balance >= suggested_amount
     save_prediction(crypto, signal, prediction)
